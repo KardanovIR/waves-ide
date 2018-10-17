@@ -1,97 +1,37 @@
-import * as React from "react"
-import { Provider, connect } from "react-redux"
-import { render } from "react-dom"
-import { Editor } from "./components/editor"
-import { Tab, Tabs } from "material-ui"
-import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider'
-import { store } from './store'
-import { IAppState, ICodingState } from './state'
-import { getMuiTheme } from 'material-ui/styles'
-import { palette } from './style'
-import { SyntaxTreeTab } from './components/syntaxTreeTab'
-import { TopBar } from './components/topBar'
-import { BinaryTab } from './components/binaryTab'
-import { EditorTabs } from './components/editorTabs'
-import { Intro } from './components/intro'
-import { compile } from "@waves/ride-js"
-import { UserNotification } from './components/userNotification'
-import { UserDialog } from "./components/userDialog";
-import { SettingsDialog } from "./components/settingsDialog";
-import {Repl} from 'waves-repl'
+import * as React from "react";
+import {render} from "react-dom";
+import {Provider} from "react-redux";
+import MuiThemeProvider from '@material-ui/core/styles/MuiThemeProvider';
+import createMuiTheme from '@material-ui/core/styles/createMuiTheme'
+import debounce = require('debounce')
+import {App} from "./app";
+import {store} from "./store";
+import {saveState} from "./utils/localStore";
 
-export class app extends React.Component<{ coding: ICodingState }, IAppState> {
-  constructor(props) {
-    super(props)
-  }
-  render() {
-    return (
-      <div id='body'>
-        <TopBar />
-        <div id="wrapper">
-          <div id="inner-wrapper">
-            <div id="content">
-              <div id='tabs' style={{
-                backgroundColor: palette.primary1Color, height: 48
-              }}>
-                <EditorTabs />
-              </div>
-              <div id='editor'>
-                {this.props.coding.editors.length > 0 ? <Editor /> : <Intro />}
-              </div>
-            </div >
-            <div id="inspector">
-              <Tabs contentContainerStyle={{ flex: 1, overflowY: 'scroll' }} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Tab label='Syntax tree'>
-                  <SyntaxTreeTab />
-                </Tab>
-                <Tab label='Binary'>
-                  <BinaryTab />
-                </Tab>
-              </Tabs>
-              <UserNotification />
-              <UserDialog />
-              <SettingsDialog />
-            </div>
-          </div>
-          <div style={{ height: '1px', backgroundColor: '#E5E7E9' }}></div>
-          <div id='repl'>
-            <Repl theme='light'/>
-          </div>
-        </div>
-      </div >
-    )
-  }
-}
+const theme = createMuiTheme({
+    palette: {
+        primary: {main: '#1f5af6'},
+        secondary: {main: '#ff4081'},
 
-const App = connect((state: IAppState) => ({
-  coding: state.coding
-}))(app)
+    },
+    typography: {
+        useNextVariants: true,
+    },
+});
 
-const muiTheme = getMuiTheme({
-  palette
-})
+store.subscribe(debounce(() => {
+    saveState(store.getState())
+}, 500))
 
-const r = () =>
-  render(
+
+render(
     <Provider store={store}>
-      <MuiThemeProvider muiTheme={muiTheme}>
-        <App />
-      </MuiThemeProvider>
+        <MuiThemeProvider theme={theme}>
+            <App/>
+        </MuiThemeProvider>
     </Provider>,
-    document.getElementById("container"),
-      () => {
-      const state = store.getState()
-      Repl.updateEnv({...state.env, ...state.coding})
-      console.log(state)
-    }
-  )
+    document.getElementById("container")
+)
 
-//ToDo: Move this to store middleware
-setInterval(() => {
-  localStorage.setItem('store', JSON.stringify(store.getState().coding))
-}, 5000)
-//global['updateEnv'] = Repl.updateEnv
-//store.subscribe(() => console.log(store.getState()))
-r()
 
 

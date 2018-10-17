@@ -3,16 +3,11 @@
     "baseUrl": "src",
     "moduleResolution": "node",
     "outDir": "./dist/",
-    "sourceMap": false,
+    "sourceMap": true,
     "noImplicitAny": false,
     "module": "commonjs",
     "target": "es6",
-    "jsx": "react",
-    "paths": {
-      "@utils/*": [
-        "utils/*"
-      ]
-    }
+    "jsx": "react"
   },
   "include": [
     "./src/**/*"

@@ -1,94 +1,117 @@
 import * as React from "react"
-import { MenuItem, Popover, Menu, FlatButton, FontIcon } from 'material-ui'
-import { connect } from 'react-redux'
-import { loadSample, editorCodeChange, newEditorTab } from '../store'
-import { palette } from '../style'
-import { IAppState } from "../state"
+import {RouteComponentProps, withRouter} from 'react-router'
+import Icon from '@material-ui/core/Icon';
+import Button from '@material-ui/core/Button';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+import {connect} from 'react-redux'
+import {loadSample, newEditorTab} from '../actions'
+import EMenuItem from './lib/ExtendedMenuItem'
 
-export default class newMenuButton extends React.Component
-  <{
-    onLoadSample: (key: string) => void
-    onEditorCodeChanged: (code: string) => void
-    onNewContract: (code: string) => void
-  }> {
-  isMenuOpen = false
-  anchorEl = null
 
-  constructor(props) {
-    super(props);
-  }
+class NewMenuButtonComponent extends React.Component
+    <RouteComponentProps & {
+        onLoadSample: (key: string) => void
+        onNewContract: (code: string) => void
+    }, { anchorEl: any }> {
 
-  handleClick(event: React.MouseEvent<{}>) {
-    event.preventDefault();
-    this.isMenuOpen = true
-    this.anchorEl = event.currentTarget
-    this.forceUpdate()
-  }
+    public state = {
+        anchorEl: null
+    }
 
-  handleMenuClose() {
-    this.isMenuOpen = false
-    this.forceUpdate()
-  }
+    handleClick = (event: React.MouseEvent<{}>) => {
+        //event.preventDefault();
+        this.setState({anchorEl: event.currentTarget})
+    }
 
-  handleLoadSmaple(key: string) {
-    this.handleMenuClose()
-    this.props.onLoadSample(key)
-  }
+    handleClose = () => {
+        this.setState({anchorEl: null});
+    }
 
-  clear() {
-    this.handleMenuClose()
-    this.props.onNewContract('')
-  }
+    handleLoadSample = (key: string) => {
+        this.handleClose()
+        this.props.onLoadSample(key)
+    }
 
-  render() {
-    return (
-      <span>
-        <FlatButton
-          onClick={(e) => this.handleClick(e)}
-          icon={<FontIcon className="material-icons">add</FontIcon>}
-          label='NEW'
-          backgroundColor={palette.accent1Color}
-          hoverColor='#ffb3cb'
-          style={{ color: 'white', marginLeft: 30, paddingBottom: 37 }}
-        />
-        <Popover
-          open={this.isMenuOpen}
-          anchorEl={this.anchorEl}
-          anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-          targetOrigin={{ horizontal: 'left', vertical: 'top' }}
-          onRequestClose={(e) => this.handleMenuClose()}>
-          <Menu>
-            <MenuItem primaryText="Empty contract"
-              leftIcon={<FontIcon className="material-icons">insert_drive_file</FontIcon>}
-              onClick={() => this.clear()}
-            />
-            <MenuItem primaryText="Sample"
-              leftIcon={<FontIcon className="material-icons">remove_red_eye</FontIcon>}
-              rightIcon={<FontIcon className="material-icons">arrow_right</FontIcon>}
-              menuItems={[
-                <MenuItem primaryText="Simple" onClick={() => this.handleLoadSmaple('simple')} />,
-                <MenuItem primaryText="Multisig (2 of 3)" onClick={() => this.handleLoadSmaple('multisig')} />,
-                <MenuItem primaryText="Notary" onClick={() => this.handleLoadSmaple('notary')} />,
-              ]}
-            />
-          </Menu>
-        </Popover>
-      </span>
-    )
-  }
+    handleWizard = (kind: string) => {
+        const {history} =  this.props;
+        this.handleClose()
+        history.push(`wizard/${kind}`)
+    }
+
+    clear = () => {
+        this.handleClose()
+        this.props.onNewContract('')
+    }
+
+    render() {
+        const {anchorEl} = this.state;
+
+        return (
+        <span>
+            <Button
+                variant="text"
+                aria-owns={anchorEl ? 'new-menu' : null}
+                aria-haspopup="true"
+                onClick={this.handleClick}
+                style={{color: 'white', backgroundColor: '#1f5af6', marginLeft: 30}}
+            >
+                <Icon className="material-icons">add</Icon>
+                New
+            </Button>
+            <Menu id="new-menu"
+                  open={Boolean(anchorEl)}
+                  anchorEl={anchorEl}
+                  onClose={this.handleClose}
+                  getContentAnchorEl={null}
+                  anchorOrigin={{
+                      vertical: "bottom",
+                      horizontal: "left"
+                  }}
+                  transformOrigin={{
+                      vertical: "top",
+                      horizontal: "left"
+                  }}
+            >
+                <MenuItem onClick={() => this.clear()}>
+                    <Icon className="material-icons" style={{color: "#757575", marginRight: 24}}>insert_drive_file</Icon>
+                    Empty contract
+                    <Icon className="material-icons" style={{color: "#757575", left: "auto"}}></Icon>
+                </MenuItem>
+                <EMenuItem
+                    menuItems={[
+                        <MenuItem children="Simple" onClick={() => this.handleLoadSample('simple')}/>,
+                        <MenuItem children="Multisig (2 of 3)" onClick={() => this.handleLoadSample('multisig')}/>,
+                        <MenuItem children="Notary" onClick={() => this.handleLoadSample('notary')}/>,
+                    ]}
+                >
+                    <Icon className="material-icons" style={{color: "#757575", marginRight: 24}}>remove_red_eye</Icon>
+                    Sample
+                    <Icon className="material-icons" style={{color: "#757575", marginLeft: "auto"}}>arrow_right</Icon>
+                </EMenuItem>
+                <EMenuItem
+                    menuItems={[
+                        <MenuItem children="Multisig" onClick={() => this.handleWizard('multisig')}/>
+                    ]}
+                >
+                    <Icon className="material-icons" style={{color: "#757575", marginRight: 24}}>flash_on</Icon>
+                    Wizard
+                    <Icon className="material-icons" style={{color: "#757575", marginLeft: "auto"}}>arrow_right</Icon>
+                </EMenuItem>
+            </Menu>
+          </span>
+        )
+    }
 }
 
-const mapStateToProps = (state: IAppState) => {
-  return ({ code: state.coding.editors[state.coding.selectedEditor].code })
-}
 
 const mapDispatchToProps = (dispatch) => ({
-  onLoadSample: (key: any) =>
-    dispatch(loadSample(key)),
-  onNewContract: (code: string) =>
-    dispatch(newEditorTab(code)),
-  onEditorCodeChanged: (code: string) =>
-    dispatch(editorCodeChange(code)),
+    onLoadSample: (key: any) =>
+        dispatch(loadSample(key)),
+    onNewContract: (code: string) =>
+        dispatch(newEditorTab(code))
 })
 
-export const NewMenuButton = connect(null, mapDispatchToProps)(newMenuButton)
+export const NewMenuButton = withRouter(connect(null, mapDispatchToProps)(NewMenuButtonComponent))
+
+
